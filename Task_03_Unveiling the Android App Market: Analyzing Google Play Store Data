@@ -1,0 +1,59 @@
+# Importing necessary libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the dataset
+# Make sure to replace 'googleplaystore.csv' with your actual dataset path
+data = pd.read_csv('googleplaystore.csv')
+
+# Inspect the dataset
+print(data.head())
+print(data.info())
+
+# Data Cleaning
+# Removing duplicates
+data.drop_duplicates(inplace=True)
+
+# Handling missing values
+data.dropna(subset=['Rating', 'Reviews'], inplace=True)  # Dropping rows where Rating or Reviews are missing
+
+# Converting data types
+data['Reviews'] = data['Reviews'].astype(int)  # Convert Reviews to integer
+data['Price'] = data['Price'].replace({'\$': '', ',': ''}, regex=True).astype(float)  # Clean and convert Price
+
+# Filtering data for analysis (optional)
+data = data[data['Category'].notna()]  # Keeping only rows with a valid category
+
+# Categorizing apps by size (optional)
+def categorize_size(size):
+    if 'M' in size:
+        return float(size.replace('M', ''))  # Convert megabytes to float
+    elif 'K' in size:
+        return float(size.replace('K', '')) / 1024  # Convert kilobytes to megabytes
+    return None
+
+data['Size'] = data['Size'].apply(categorize_size)
+
+# Visualization
+plt.figure(figsize=(12, 6))
+sns.countplot(y='Category', data=data, order=data['Category'].value_counts().index)
+plt.title('Number of Apps in Each Category')
+plt.xlabel('Number of Apps')
+plt.ylabel('Category')
+plt.show()
+
+# Visualizing Ratings vs. Number of Reviews
+plt.figure(figsize=(12, 6))
+sns.scatterplot(x='Reviews', y='Rating', data=data, alpha=0.6)
+plt.title('Ratings vs. Number of Reviews')
+plt.xlabel('Number of Reviews')
+plt.ylabel('Rating')
+plt.show()
+
+# Boxplot to analyze price distribution by category
+plt.figure(figsize=(14, 8))
+sns.boxplot(x='Category', y='Price', data=data)
+plt.title('Price Distribution by Category')
+plt.xticks(rotation=90)
+plt.show()
