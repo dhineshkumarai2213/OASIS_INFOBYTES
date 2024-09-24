@@ -1,0 +1,73 @@
+# Importing necessary libraries
+import pandas as pd
+import re
+import nltk
+from nltk.tokenize import word_tokenize
+from collections import defaultdict, Counter
+from difflib import get_close_matches
+import time
+
+# Download NLTK data files (if not already installed)
+nltk.download('punkt')
+
+# Load the dataset
+# Make sure to replace 'text_data.csv' with your actual dataset path
+data = pd.read_csv('text_data.csv')
+
+# Inspect the data
+print(data.head())
+
+# Data Preprocessing
+def preprocess_text(text):
+    text = re.sub(r'[^a-zA-Z\s]', '', text)  # Remove special characters
+    text = text.lower()  # Convert to lowercase
+    tokens = word_tokenize(text)  # Tokenization
+    return tokens
+
+# Applying preprocessing
+data['processed_text'] = data['text_column'].apply(preprocess_text)  # Replace 'text_column' with your actual column name
+
+# Creating N-grams for autocomplete
+def create_ngrams(tokens, n=2):
+    ngrams = defaultdict(Counter)
+    for i in range(len(tokens) - n + 1):
+        ngram = ' '.join(tokens[i:i + n])
+        ngrams[tokens[i]].update([ngram])
+    return ngrams
+
+# Build bigrams from processed text
+ngrams = create_ngrams([word for sublist in data['processed_text'] for word in sublist], n=2)
+
+# Autocomplete function
+def autocomplete(prefix, n=3):
+    if prefix in ngrams:
+        return ngrams[prefix].most_common(n)
+    return []
+
+# Autocorrect function using Levenshtein distance
+def autocorrect(word, possible_words, n=1):
+    suggestions = get_close_matches(word, possible_words, n=n)
+    return suggestions[0] if suggestions else word
+
+# Example usage
+# Testing the autocomplete
+test_prefix = 'exam'  # Replace with your desired prefix
+print(f"Autocomplete Suggestions for '{test_prefix}': {autocomplete(test_prefix, n=5)}")
+
+# Testing the autocorrect
+possible_words = [word for sublist in data['processed_text'] for word in sublist]  # All unique words from processed text
+incorrect_word = 'exapmle'  # Replace with a word to test autocorrect
+corrected_word = autocorrect(incorrect_word, possible_words)
+print(f"Corrected Word for '{incorrect_word}': {corrected_word}")
+
+# Measure execution time for autocomplete
+start_time = time.time()
+autocomplete_results = autocomplete('exam', n=5)
+end_time = time.time()
+print(f"Time taken for Autocomplete: {end_time - start_time:.4f} seconds")
+
+# Measure execution time for autocorrect
+start_time = time.time()
+corrected = autocorrect('exapmle', possible_words)
+end_time = time.time()
+print(f"Time taken for Autocorrect: {end_time - start_time:.4f} seconds")
