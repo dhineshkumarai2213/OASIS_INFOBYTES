@@ -1,0 +1,54 @@
+# Importing necessary libraries
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+from sklearn.ensemble import IsolationForest
+from sklearn.preprocessing import StandardScaler
+
+# Load the dataset
+# Make sure to replace 'fraud_dataset.csv' with your actual dataset path
+data = pd.read_csv('fraud_dataset.csv')
+
+# Inspect the data
+print(data.head())
+
+# Split data into features (X) and target (y)
+X = data.drop('is_fraud', axis=1)  # 'is_fraud' is the target column indicating fraud (1 for fraud, 0 for legitimate)
+y = data['is_fraud']
+
+# Splitting the dataset into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Standardizing the features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Isolation Forest for anomaly detection (unsupervised)
+iso_forest = IsolationForest(contamination=0.02, random_state=42)  # Assuming 2% fraud in data
+iso_forest.fit(X_train_scaled)
+
+# Predict anomalies on the test set
+anomaly_pred = iso_forest.predict(X_test_scaled)
+anomaly_pred = [1 if x == -1 else 0 for x in anomaly_pred]  # -1 indicates anomaly in Isolation Forest
+
+# Print performance of anomaly detection
+print("Anomaly Detection using Isolation Forest:")
+print(f"Accuracy: {accuracy_score(y_test, anomaly_pred)}")
+print(confusion_matrix(y_test, anomaly_pred))
+print(classification_report(y_test, anomaly_pred))
+print('-' * 50)
+
+# Supervised Learning - Random Forest Classifier
+rf_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_classifier.fit(X_train_scaled, y_train)
+
+# Predicting on the test set
+y_pred = rf_classifier.predict(X_test_scaled)
+
+# Evaluating the model
+print("Fraud Detection using Random Forest:")
+print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred))
