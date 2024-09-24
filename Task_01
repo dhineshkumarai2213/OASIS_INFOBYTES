@@ -1,0 +1,87 @@
+# Step 1: Importing Necessary Libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+# Step 2: Load the Dataset from a local file
+df = pd.read_csv('path_to_your_local_file/titanic.csv')  # Update this path
+
+# Step 3: Data Exploration
+# Preview the dataset
+print(df.head())
+
+# Check for missing values
+print(df.isnull().sum())
+
+# Descriptive statistics
+print(df.describe())
+
+# Select only numeric columns for the correlation matrix
+numeric_df = df.select_dtypes(include=[np.number])
+
+# Visualize correlation matrix (for numerical columns only)
+plt.figure(figsize=(10, 8))
+sns.heatmap(numeric_df.corr(), annot=True, cmap='coolwarm')
+plt.title("Correlation Matrix")
+plt.show()
+
+# Step 4: Data Preprocessing
+# Fill missing values with the median for numerical columns
+df.fillna(df.median(), inplace=True)
+
+# Handling categorical variables with One-Hot Encoding
+df_encoded = pd.get_dummies(df, drop_first=True)
+
+# Step 5: Splitting Data into Features (X) and Target (y)
+X = df_encoded.drop('Fare', axis=1)  # Features
+y = df_encoded['Fare']               # Target
+
+# Splitting the data into training and testing sets (80% train, 20% test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Step 6: Building the Linear Regression Model
+model = LinearRegression()
+
+# Training the model
+model.fit(X_train, y_train)
+
+# Step 7: Model Evaluation
+# Predicting on the test set
+y_pred = model.predict(X_test)
+
+# Calculating performance metrics
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+r2 = r2_score(y_test, y_pred)
+
+print(f"Mean Absolute Error (MAE): {mae}")
+print(f"Mean Squared Error (MSE): {mse}")
+print(f"Root Mean Squared Error (RMSE): {rmse}")
+print(f"R-squared (R²): {r2}")
+
+# Step 8: Visualizing Results
+# Actual vs Predicted Prices
+plt.scatter(y_test, y_pred)
+plt.xlabel("Actual Fare")
+plt.ylabel("Predicted Fare")
+plt.title("Actual vs Predicted Fares")
+plt.show()
+
+# Plotting Residuals (errors)
+residuals = y_test - y_pred
+plt.scatter(y_pred, residuals)
+plt.axhline(0, color='red', linestyle='--')
+plt.xlabel("Predicted Fares")
+plt.ylabel("Residuals")
+plt.title("Residual Plot")
+plt.show()
+
+# Step 9: Model Interpretation
+# Coefficients of the linear model
+coefficients = pd.DataFrame(model.coef_, X.columns, columns=['Coefficient'])
+print(coefficients)
